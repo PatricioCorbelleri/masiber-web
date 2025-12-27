@@ -1,0 +1,33 @@
+# ======================
+# Backend (Python)
+# ======================
+backend/venv/
+backend/__pycache__/
+backend/.env
+backend/media/
+backend/migrations/__pycache__/
+
+# Python cache
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# ======================
+# Frontend (React)
+# ======================
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# ======================
+# Sistema
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# IDE
+# ======================
+.vscode/
+.idea/
