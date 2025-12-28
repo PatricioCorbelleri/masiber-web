@@ -1,6 +1,4 @@
 import enum
-from datetime import datetime
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -13,40 +11,38 @@ from sqlalchemy import (
     Enum,
 )
 from sqlalchemy.orm import relationship
-
+from datetime import datetime
 from app.database import Base
 
 
-product_tags = Table(
-    "product_tags",
-    Base.metadata,
-    Column("product_id", Integer, ForeignKey("products.id", ondelete="CASCADE"), primary_key=True),
-    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
-)
+class ProductCondition(str, enum.Enum):
+    NUEVO = "NUEVO"
+    CASI_NUEVO = "CASI_NUEVO"
+    USADO = "USADO"
+
 
 class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
-
     name = Column(String, nullable=False)
     description = Column(String)
-
-    price_usd = Column(Float, nullable=False)
-    stock = Column(Integer, default=0)
 
     brand = Column(String, nullable=True)
 
     condition = Column(
         Enum(ProductCondition, name="product_condition"),
         nullable=False,
-        default=ProductCondition.USADO,
+        default=ProductCondition.NUEVO
     )
+
+    price_usd = Column(Float, nullable=True)
+    stock = Column(Integer, default=0)
 
     category_id = Column(
         Integer,
         ForeignKey("categories.id", ondelete="RESTRICT"),
-        nullable=True,  # ⚠️ temporal, luego será False
+        nullable=False
     )
 
     category = relationship("Category", back_populates="products")
@@ -54,12 +50,6 @@ class Product(Base):
     images = Column(JSON, default=list)
     video = Column(String, nullable=True)
 
-
-
-class ProductCondition(str, enum.Enum):
-    NUEVO = "NUEVO"
-    CASI_NUEVO = "CASI_NUEVO"
-    USADO = "USADO"
 
 
 class Category(Base):

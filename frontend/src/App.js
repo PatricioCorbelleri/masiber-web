@@ -15,14 +15,20 @@ import { AuthProvider } from "./context/AuthContext";
 import Login from "./admin/Login";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/Dashboard";
+
 import ProductosList from "./admin/productos/ProductosList";
 import CrearProducto from "./admin/productos/CrearProducto";
 import EditarProducto from "./admin/productos/EditarProducto";
-import UsdSettings from "./admin/UsdSettings";
-import TagsList from "./admin/tags/TagsList";
+
 import CategoriesList from "./admin/categories/CategoriesList";
+import UsdSettings from "./admin/UsdSettings";
+
+import AdminsList from "./admin/admins/AdminsList";
+import CrearAdmin from "./admin/admins/CrearAdmin";
+import EditarAdmin from "./admin/admins/EditarAdmin";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import RequireSuperAdmin from "./admin/RequireSuperAdmin";
 
 function App() {
   return (
@@ -30,15 +36,10 @@ function App() {
       <AuthProvider>
         <UsdProvider>
           <Routes>
-
-            {/* ===================== */}
-            {/* LOGIN ADMIN */}
-            {/* ===================== */}
+            {/* ================= ADMIN LOGIN ================= */}
             <Route path="/admin/login" element={<Login />} />
 
-            {/* ===================== */}
-            {/* ADMIN (PROTEGIDO) */}
-            {/* ===================== */}
+            {/* ================= ADMIN PANEL (PROTEGIDO) ================= */}
             <Route
               path="/admin"
               element={
@@ -48,18 +49,48 @@ function App() {
               }
             >
               <Route index element={<Dashboard />} />
+
+              {/* PRODUCTOS */}
               <Route path="productos" element={<ProductosList />} />
               <Route path="productos/crear" element={<CrearProducto />} />
               <Route path="productos/editar/:id" element={<EditarProducto />} />
+
+              {/* CATEGORÍAS */}
+              <Route path="categories" element={<CategoriesList />} />
+
+              {/* DÓLAR */}
               <Route path="dolar" element={<UsdSettings />} />
-              <Route path="tags" element={<TagsList />} />
-              <Route path="/admin/categories" element={<CategoriesList />} />
+
+              {/* ADMINISTRADORES (SOLO SUPER ADMIN) */}
+              <Route
+                path="admins"
+                element={
+                  <RequireSuperAdmin>
+                    <AdminsList />
+                  </RequireSuperAdmin>
+                }
+              />
+
+              <Route
+                path="admins/crear"
+                element={
+                  <RequireSuperAdmin>
+                    <CrearAdmin />
+                  </RequireSuperAdmin>
+                }
+              />
+
+              <Route
+                path="admins/editar/:id"
+                element={
+                  <RequireSuperAdmin>
+                    <EditarAdmin />
+                  </RequireSuperAdmin>
+                }
+              />
             </Route>
 
-            {/* ===================== */}
-            {/* SITIO PÚBLICO */}
-            {/* ===================== */}
-
+            {/* ================= SITIO PÚBLICO ================= */}
             <Route
               path="/"
               element={
@@ -104,9 +135,8 @@ function App() {
               }
             />
 
-            {/* 🔎 BÚSQUEDA */}
             <Route
-              path="/Busqueda"
+              path="/busqueda"
               element={
                 <>
                   <Navbar />
@@ -115,7 +145,6 @@ function App() {
                 </>
               }
             />
-
           </Routes>
         </UsdProvider>
       </AuthProvider>

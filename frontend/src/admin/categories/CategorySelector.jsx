@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../../api/axios";
+import api from "../../api/axios";
 import { categorySelectorStyles as s } from "../../styles/admin/categorySelector.styles";
 
 export default function CategorySelector({ value, onChange }) {
@@ -10,8 +10,33 @@ export default function CategorySelector({ value, onChange }) {
   }, []);
 
   const load = async () => {
-    const res = await api.get("/categories");
+    const res = await api.get("/categories/tree");
     setCategories(res.data || []);
+  };
+
+  // Render recursivo de opciones
+  const renderOptions = (nodes, level = 0) => {
+    return nodes.flatMap((node) => {
+      const isLeaf = !node.children || node.children.length === 0;
+
+      const options = [
+        <option
+          key={node.id}
+          value={node.id}
+          disabled={!isLeaf}
+        >
+          {"— ".repeat(level)}
+          {node.name}
+          {!isLeaf ? " (grupo)" : ""}
+        </option>,
+      ];
+
+      if (node.children && node.children.length > 0) {
+        options.push(...renderOptions(node.children, level + 1));
+      }
+
+      return options;
+    });
   };
 
   return (
@@ -24,11 +49,7 @@ export default function CategorySelector({ value, onChange }) {
         Seleccionar categoría *
       </option>
 
-      {categories.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
+      {renderOptions(categories)}
     </select>
   );
 }

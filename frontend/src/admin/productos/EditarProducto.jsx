@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../api/axios";
+import api from "../../api/axios";
 import ProductForm from "./ProductForm";
 
 export default function EditarProducto() {
@@ -10,12 +10,13 @@ export default function EditarProducto() {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    brand: "",
+    condition: "",
     price_usd: "",
     stock: 0,
   });
 
   const [categoryId, setCategoryId] = useState("");
-  const [tags, setTags] = useState([]);
   const [currentImages, setCurrentImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [video, setVideo] = useState(null);
@@ -36,14 +37,13 @@ export default function EditarProducto() {
       setForm({
         name: p.name || "",
         description: p.description || "",
+        brand: p.brand || "",
+        condition: p.condition || "",
         price_usd: p.price_usd ?? "",
         stock: p.stock ?? 0,
       });
 
-      // 🔥 FIX CLAVE
       setCategoryId(p.category?.id ?? "");
-
-      setTags(p.tags || []);
       setCurrentImages(p.images || []);
       setLoading(false);
     } catch (err) {
@@ -74,6 +74,16 @@ export default function EditarProducto() {
       return;
     }
 
+    if (!form.brand.trim()) {
+      alert("La marca es obligatoria");
+      return;
+    }
+
+    if (!form.condition) {
+      alert("El estado es obligatorio");
+      return;
+    }
+
     if (!categoryId) {
       alert("La categoría es obligatoria");
       return;
@@ -86,9 +96,11 @@ export default function EditarProducto() {
       await api.put(`/products/${id}`, {
         name: form.name,
         description: form.description,
+        brand: form.brand,
+        condition: form.condition,
         price_usd: form.price_usd ? Number(form.price_usd) : null,
         stock: Number(form.stock),
-        category_id: Number(categoryId), // 🔥 FIX
+        category_id: Number(categoryId),
       });
 
       // 2️⃣ Subir nuevas imágenes
@@ -132,8 +144,6 @@ export default function EditarProducto() {
       onChange={onChange}
       categoryId={categoryId}
       setCategoryId={setCategoryId}
-      tags={tags}
-      setTags={setTags}
       images={newImages}
       setImages={setNewImages}
       currentImages={currentImages}

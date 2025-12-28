@@ -7,7 +7,7 @@ from app.database import Base, engine, get_db
 from app import crud
 from app.database import engine
 from app import models
-from app.routes import auth, products, tags, settings, categories
+from app.routes import auth, products, settings, categories, admins
 from app.routes import admin_auth
 
 # =========================
@@ -71,9 +71,9 @@ def startup():
 # =========================
 app.include_router(auth.router)       # /auth/login
 app.include_router(products.router)   # /products
-app.include_router(tags.router)       # /tags
 app.include_router(settings.router)   # /settings (USD)
 app.include_router(categories.router)
+app.include_router(admins.router)
 
 
 

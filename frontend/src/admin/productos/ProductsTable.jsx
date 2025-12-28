@@ -5,19 +5,33 @@ import { formatUSD } from "../../utils/format";
 export default function ProductsTable({
   products,
   onViewDescription,
-  onClone,
   onDelete,
 }) {
+  const renderCategoryPath = (category) => {
+    if (!category) return "—";
+    if (!category.parent) return category.name;
+    return `${category.parent.name} > ${category.name}`;
+  };
+
+  const renderCondition = (condition) => {
+    if (!condition) return "—";
+    if (condition === "NUEVO") return "Nuevo";
+    if (condition === "CASI_NUEVO") return "Casi nuevo";
+    if (condition === "USADO") return "Usado";
+    return condition;
+  };
+
   return (
     <table style={s.table}>
       <thead>
         <tr>
           <th style={s.th}>Nombre</th>
           <th style={s.th}>Descripción</th>
+          <th style={s.th}>Marca</th>
+          <th style={s.th}>Estado</th>
           <th style={s.th}>Precio</th>
           <th style={s.th}>Stock</th>
           <th style={s.th}>Categoría</th>
-          <th style={s.th}>Tags</th>
           <th style={{ ...s.th, textAlign: "right" }}>Acciones</th>
         </tr>
       </thead>
@@ -44,21 +58,21 @@ export default function ProductsTable({
               )}
             </td>
 
-            {/* ✅ PRECIO FORMATEADO */}
-            <td style={s.td}>
-              USD {formatUSD(p.price_usd)}
-            </td>
+            {/* MARCA */}
+            <td style={s.td}>{p.brand || "—"}</td>
+
+            {/* ESTADO */}
+            <td style={s.td}>{renderCondition(p.condition)}</td>
+
+            {/* PRECIO */}
+            <td style={s.td}>USD {formatUSD(p.price_usd)}</td>
 
             <td style={s.td}>{p.stock ?? 0}</td>
-            <td style={s.td}>{p.category?.name}</td>
 
-           <td style={s.td}>
-  {p.tags && p.tags.length
-    ? p.tags.map((tag) => tag.name).join(", ")
-    : ""}
-</td>
-
-
+            {/* CATEGORÍA JERÁRQUICA */}
+            <td style={s.td}>
+              {renderCategoryPath(p.category)}
+            </td>
 
             <td style={{ ...s.td, textAlign: "right" }}>
               <Link
@@ -67,14 +81,6 @@ export default function ProductsTable({
               >
                 Editar
               </Link>
-
-              {/* <button
-                type="button"
-                style={s.btnClone}
-                onClick={() => onClone(p)}
-              >
-                Clonar
-              </button> */}
 
               <button
                 type="button"

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../api/axios";
+import api from "../../api/axios";
 import ProductForm from "./ProductForm";
 
 export default function CrearProducto() {
@@ -9,24 +9,35 @@ export default function CrearProducto() {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    brand: "",
+    condition: "",
     price_usd: "",
     stock: 0,
   });
 
   const [categoryId, setCategoryId] = useState("");
-  const [tags, setTags] = useState([]); // se mantiene para UI
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const guardar = async () => {
     if (!form.name.trim()) {
       alert("El nombre es obligatorio");
+      return;
+    }
+
+    if (!form.brand.trim()) {
+      alert("La marca es obligatoria");
+      return;
+    }
+
+    if (!form.condition) {
+      alert("El estado es obligatorio");
       return;
     }
 
@@ -38,10 +49,12 @@ export default function CrearProducto() {
     try {
       setLoading(true);
 
-      // 1️⃣ Crear producto BASE (🔥 SIN TAGS)
+      // 1️⃣ Crear producto base
       const res = await api.post("/products", {
         name: form.name,
         description: form.description,
+        brand: form.brand,
+        condition: form.condition,
         price_usd: form.price_usd ? Number(form.price_usd) : null,
         stock: Number(form.stock),
         category_id: Number(categoryId),
@@ -85,8 +98,6 @@ export default function CrearProducto() {
       onChange={onChange}
       categoryId={categoryId}
       setCategoryId={setCategoryId}
-      tags={tags}
-      setTags={setTags}
       images={images}
       setImages={setImages}
       onVideoChange={(e) => setVideo(e.target.files[0])}

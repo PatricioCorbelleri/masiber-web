@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api/axios";
+import api from "../api/axios";
 import { page, images, productsGrid } from "../styles";
 import ProductCard from "../components/ProductCard"; // Importamos el nuevo ProductCard
 

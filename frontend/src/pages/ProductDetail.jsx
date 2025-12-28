@@ -20,8 +20,6 @@ function ProductDetail() {
       .catch((err) => console.error("Error producto", err));
   }, [id]);
 
-  /* ===================== HOOKS SIEMPRE ARRIBA ===================== */
-
   const imagesArr = useMemo(() => {
     if (!product || !Array.isArray(product.images)) return [];
     return product.images.map((img) =>
@@ -29,15 +27,25 @@ function ProductDetail() {
     );
   }, [product]);
 
-  /* ===================== HELPERS ===================== */
-
   const formatARS = (v) =>
     new Intl.NumberFormat("es-AR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(v);
 
-  /* ===================== EARLY RETURN ===================== */
+  const renderCategoryPath = (category) => {
+    if (!category) return "—";
+    if (!category.parent) return category.name;
+    return `${category.parent.name} > ${category.name}`;
+  };
+
+  const renderCondition = (condition) => {
+    if (!condition) return "—";
+    if (condition === "NUEVO") return "Nuevo";
+    if (condition === "CASI_NUEVO") return "Casi nuevo";
+    if (condition === "USADO") return "Usado";
+    return condition;
+  };
 
   if (!product || loadingUsd || !usd) {
     return (
@@ -58,9 +66,7 @@ function ProductDetail() {
 
   return (
     <div style={page.wrapperPadded}>
-      {/* ===================== CARD ===================== */}
       <div style={cards.detail}>
-        {/* ===== IMAGEN ===== */}
         <div>
           {imagesArr.length > 0 ? (
             <div style={images.detailWrapper}>
@@ -106,13 +112,19 @@ function ProductDetail() {
           )}
         </div>
 
-        {/* ===== INFO ===== */}
         <div style={productDetail.infoCol}>
           <h1 style={productDetail.title}>{product.name}</h1>
 
-          {/* 🔥 FIX CATEGORÍA */}
           <p style={productDetail.category}>
-            {product.category?.name}
+            {renderCategoryPath(product.category)}
+          </p>
+
+          <p>
+            <strong>Marca:</strong> {product.brand || "—"}
+          </p>
+
+          <p>
+            <strong>Estado:</strong> {renderCondition(product.condition)}
           </p>
 
           <p style={productDetail.priceUSD}>
@@ -132,17 +144,6 @@ function ProductDetail() {
             </p>
           )}
 
-          {/* 🔥 FIX TAGS */}
-          {product.tags?.length > 0 && (
-            <div style={productDetail.tags}>
-              {product.tags.map((t) => (
-                <span key={t.id} style={productDetail.tag}>
-                  {t.name}
-                </span>
-              ))}
-            </div>
-          )}
-
           <a
             style={productDetail.btnWhats}
             href={`https://wa.me/5492213053829?text=Hola%20MASIBER,%20quiero%20información%20sobre%20${encodeURIComponent(
@@ -156,7 +157,6 @@ function ProductDetail() {
         </div>
       </div>
 
-      {/* ===================== DESCRIPCIÓN ===================== */}
       <div style={productDetail.descriptionBlock}>
         <h2 style={productDetail.sectionTitle}>Descripción</h2>
         <p style={productDetail.description}>

@@ -1,4 +1,3 @@
-import TagSelector from "../tags/TagSelector";
 import ImageUploader from "../../components/ImageUploader";
 import CategorySelector from "../categories/CategorySelector";
 import { adminProductForm as s } from "../../styles";
@@ -9,8 +8,6 @@ export default function ProductForm({
   onChange,
   categoryId,
   setCategoryId,
-  tags,
-  setTags,
   images,
   setImages,
   currentImages = [],
@@ -48,6 +45,36 @@ export default function ProductForm({
           />
         </div>
 
+        {/* MARCA */}
+        <div style={s.field}>
+          <label style={s.label}>Marca *</label>
+          <input
+            style={s.input}
+            name="brand"
+            value={form.brand}
+            onChange={onChange}
+            placeholder="Ej: Agrometal"
+          />
+        </div>
+
+        {/* ESTADO */}
+        <div style={s.field}>
+          <label style={s.label}>Estado *</label>
+          <select
+            style={s.input}
+            name="condition"
+            value={form.condition}
+            onChange={onChange}
+          >
+            <option value="" disabled>
+              Seleccionar estado
+            </option>
+            <option value="NUEVO">Nuevo</option>
+            <option value="CASI_NUEVO">Casi nuevo</option>
+            <option value="USADO">Usado</option>
+          </select>
+        </div>
+
         {/* CATEGORÍA */}
         <div style={s.field}>
           <label style={s.label}>Categoría *</label>
@@ -82,12 +109,6 @@ export default function ProductForm({
           </div>
         </div>
 
-        {/* TAGS */}
-        <div style={s.field}>
-          <label style={s.label}>Tags</label>
-          <TagSelector value={tags} onChange={setTags} />
-        </div>
-
         {/* IMÁGENES ACTUALES */}
         {currentImages.length > 0 && (
           <div style={s.field}>
@@ -95,7 +116,11 @@ export default function ProductForm({
             <div style={s.imgGrid}>
               {currentImages.map((img) => (
                 <div key={img} style={s.imgBox}>
-                  <img src={`http://localhost:8000${img}`} alt="" style={s.img} />
+                  <img
+                    src={`http://localhost:8000${img}`}
+                    alt=""
+                    style={s.img}
+                  />
                   <button
                     style={s.btnDeleteImg}
                     onClick={() => onDeleteImage(img)}

@@ -21,7 +21,6 @@ export default function AdminLayout() {
 
   return (
     <div style={adminLayout.layout}>
-      {/* SIDEBAR */}
       <aside style={adminLayout.sidebar}>
         <div>
           <div style={adminLayout.header}>
@@ -52,16 +51,9 @@ export default function AdminLayout() {
             />
 
             <SidebarLink
-  to="/admin/categories"
-  label="Categorías"
-  active={isActive("/admin/categories")}
-/>
-
-
-            <SidebarLink
-              to="/admin/tags"
-              label="Tags"
-              active={isActive("/admin/tags")}
+              to="/admin/categories"
+              label="Categorías"
+              active={isActive("/admin/categories")}
             />
 
             <SidebarLink
@@ -70,19 +62,16 @@ export default function AdminLayout() {
               active={isActive("/admin/dolar")}
             />
 
-            {/* <span style={adminLayout.sectionTitle}>Sistema</span>
+            <span style={adminLayout.sectionTitle}>Sistema</span>
 
+            {user?.role === "SUPER_ADMIN" && (
             <SidebarLink
-              to="/admin/usuarios/crear"
-              label="Crear usuario"
-              active={isActive("/admin/usuarios")}
+              to="/admin/admins"
+              label="Administradores"
+              active={isActive("/admin/admins")}
             />
+            )}
 
-            <SidebarLink
-              to="/admin/historial"
-              label="Historial"
-              active={isActive("/admin/historial")}
-            /> */}
           </nav>
         </div>
 
@@ -97,15 +86,12 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main style={adminLayout.main}>
         <Outlet />
       </main>
     </div>
   );
 }
-
-/* ===== LINK ===== */
 
 function SidebarLink({ to, label, active }) {
   return (

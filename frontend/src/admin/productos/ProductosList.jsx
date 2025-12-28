@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../../api/axios";
+import api from "../../api/axios";
 
 import ProductsTable from "./ProductsTable";
 import ProductDescriptionModal from "./modals/ProductDescriptionModal";
 import ProductDeleteModal from "./modals/ProductDeleteModal";
 import { productsListStyles as s } from "../../styles/admin/productsList.styles";
-
 
 export default function ProductosList() {
   const [products, setProducts] = useState([]);
@@ -15,6 +14,10 @@ export default function ProductosList() {
   const [descProduct, setDescProduct] = useState(null);
   const [deleteProduct, setDeleteProduct] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // 🔎 FILTROS
+  const [brandFilter, setBrandFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -41,6 +44,32 @@ export default function ProductosList() {
     load();
   };
 
+  // ✅ PRODUCTOS FILTRADOS
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchBrand = brandFilter
+        ? p.brand?.toLowerCase().includes(brandFilter.toLowerCase())
+        : true;
+
+      const matchCategory = categoryFilter
+        ? String(p.category?.id) === String(categoryFilter)
+        : true;
+
+      return matchBrand && matchCategory;
+    });
+  }, [products, brandFilter, categoryFilter]);
+
+  // categorías únicas para el select
+  const categories = useMemo(() => {
+    const map = new Map();
+    products.forEach((p) => {
+      if (p.category) {
+        map.set(p.category.id, p.category.name);
+      }
+    });
+    return Array.from(map.entries());
+  }, [products]);
+
   return (
     <div>
       <div style={s.headerRow}>
@@ -54,12 +83,56 @@ export default function ProductosList() {
         </Link>
       </div>
 
+      {/* 🔎 FILTROS */}
+      <div style={{ ...s.card, marginBottom: 20 }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <label>Marca</label>
+            <input
+              type="text"
+              placeholder="Buscar por marca"
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              style={s.input}
+            />
+          </div>
+
+          <div>
+            <label>Categoría</label>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              style={s.input}
+            >
+              <option value="">Todas</option>
+              {categories.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(brandFilter || categoryFilter) && (
+            <button
+              style={s.btnCancel}
+              onClick={() => {
+                setBrandFilter("");
+                setCategoryFilter("");
+              }}
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      </div>
+
       <div style={s.card}>
         {loading ? (
           <p>Cargando…</p>
         ) : (
           <ProductsTable
-            products={products}
+            products={filteredProducts}
             onViewDescription={setDescProduct}
             onClone={clone}
             onDelete={setDeleteProduct}
