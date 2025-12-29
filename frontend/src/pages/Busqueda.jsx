@@ -3,7 +3,8 @@ import { useLocation } from "react-router-dom";
 import api from "../api/axios";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
+
 
 import { busqueda } from "../styles";
 import ProductCard from "../components/ProductCard";
@@ -40,11 +41,14 @@ export default function Busqueda() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  // Mantiene abierta la rama del acordeón
+  const [openPath, setOpenPath] = useState([]);
+
   /* ===================== CARGAR CATEGORÍAS ===================== */
 
   useEffect(() => {
     api
-      .get("/products/meta/categories")
+      .get("/categories/tree")
       .then((res) => setCategories(res.data || []))
       .catch(() => setCategories([]));
   }, []);
@@ -111,47 +115,85 @@ export default function Busqueda() {
       Stock: p.stock ?? 0,
     }));
 
-  /* ===================== EXPORT EXCEL ===================== */
-
   const exportToExcel = () => {
-    if (!products.length) {
-      alert("No hay productos para exportar");
-      return;
-    }
+    if (!products.length) return;
 
-    const data = buildExportRows();
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(buildExportRows());
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Productos");
 
     XLSX.writeFile(workbook, "productos_filtrados.xlsx");
   };
 
-  /* ===================== EXPORT PDF ===================== */
-
   const exportToPDF = () => {
-    if (!products.length) {
-      alert("No hay productos para exportar");
-      return;
-    }
+    if (!products.length) return;
 
     const doc = new jsPDF("l", "mm", "a4");
-
     doc.setFontSize(14);
     doc.text("Listado de Productos", 14, 15);
 
     const rows = buildExportRows();
 
-    doc.autoTable({
-      startY: 22,
-      head: [Object.keys(rows[0])],
-      body: rows.map((r) => Object.values(r)),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [40, 40, 40] },
-    });
+    autoTable(doc, {
+  startY: 22,
+  head: [Object.keys(rows[0])],
+  body: rows.map((r) => Object.values(r)),
+  styles: { fontSize: 9 },
+  headStyles: { fillColor: [40, 40, 40] },
+});
+
 
     doc.save("productos_filtrados.pdf");
+  };
+
+  /* ===================== CATEGORÍAS (ACORDEÓN) ===================== */
+
+  const renderCategoryAccordion = (nodes, level = 0) => {
+    return nodes.map((c) => {
+      const isOpen = openPath.includes(c.id);
+      const isActive = String(categoryId) === String(c.id);
+      const hasChildren = c.children && c.children.length > 0;
+
+      return (
+        <div key={c.id} style={{ marginLeft: level * 12 }}>
+          <button
+            style={{
+              ...busqueda.filterBtn,
+              ...(isActive ? busqueda.filterBtnActive : {}),
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              textAlign: "left",
+            }}
+            onClick={() => {
+              if (hasChildren) {
+                setOpenPath((prev) =>
+                  prev.includes(c.id)
+                    ? prev.slice(0, prev.indexOf(c.id))
+                    : [...prev, c.id]
+                );
+                return;
+              }
+
+              setCategoryId(isActive ? "" : String(c.id));
+              setPage(1);
+            }}
+          >
+            <span>{c.name}</span>
+
+            {hasChildren && (
+              <span style={{ fontSize: 12, opacity: 0.7 }}>
+                {isOpen ? "▾" : "▸"}
+              </span>
+            )}
+          </button>
+
+          {isOpen &&
+            hasChildren &&
+            renderCategoryAccordion(c.children, level + 1)}
+        </div>
+      );
+    });
   };
 
   /* ===================== RENDER ===================== */
@@ -163,31 +205,11 @@ export default function Busqueda() {
 
         <div style={busqueda.filterBlock}>
           <p style={busqueda.filterLabel}>Categorías</p>
-
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              style={{
-                ...busqueda.filterBtn,
-                ...(String(categoryId) === String(c.id)
-                  ? busqueda.filterBtnActive
-                  : {}),
-              }}
-              onClick={() => {
-                setCategoryId(
-                  String(categoryId) === String(c.id) ? "" : String(c.id)
-                );
-                setPage(1);
-              }}
-            >
-              {c.name}
-            </button>
-          ))}
+          {renderCategoryAccordion(categories)}
         </div>
 
         <div style={busqueda.filterBlock}>
           <p style={busqueda.filterLabel}>Estado</p>
-
           {CONDITIONS.map((c) => (
             <button
               key={c.value}
@@ -209,7 +231,6 @@ export default function Busqueda() {
 
         <div style={busqueda.filterBlock}>
           <p style={busqueda.filterLabel}>Marca</p>
-
           <input
             type="text"
             placeholder="Ej: Agrometal"
@@ -221,31 +242,30 @@ export default function Busqueda() {
             }}
           />
         </div>
+
+        {/* 🔥 EXPORTACIÓN */}
+        {!loading && products.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+              Exportar resultados
+            </p>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button style={busqueda.btnExport} onClick={exportToExcel}>
+                Excel
+              </button>
+              <button style={busqueda.btnExport} onClick={exportToPDF}>
+                PDF
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
 
       <main style={busqueda.results}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h2 style={busqueda.resultsTitle}>
-            {loading ? "Buscando…" : `${products.length} resultados`}
-          </h2>
-
-          {!loading && products.length > 0 && (
-            <div style={{ display: "flex", gap: 10 }}>
-              <button style={busqueda.btnExport} onClick={exportToExcel}>
-                Exportar Excel
-              </button>
-              <button style={busqueda.btnExport} onClick={exportToPDF}>
-                Exportar PDF
-              </button>
-            </div>
-          )}
-        </div>
+        <h2 style={busqueda.resultsTitle}>
+          {loading ? "Buscando…" : `${products.length} resultados`}
+        </h2>
 
         {loading && (
           <div style={busqueda.grid}>

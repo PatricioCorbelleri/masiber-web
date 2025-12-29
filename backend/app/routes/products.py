@@ -11,6 +11,63 @@ from app.models import Product, Category
 
 router = APIRouter(prefix="/products", tags=["products"])
 
+@router.get("/search")
+def search_products(
+    q: str | None = None,
+    category_id: int | None = None,
+    brand: str | None = None,
+    condition: str | None = None,
+    page: int = 1,
+    limit: int = 12,
+    db: Session = Depends(get_db),
+):
+    query = (
+        db.query(Product)
+        .options(joinedload(Product.category))
+    )
+
+    if q:
+        query = query.filter(
+            or_(
+                Product.name.ilike(f"%{q}%"),
+                Product.description.ilike(f"%{q}%"),
+            )
+        )
+
+    if category_id:
+        child_ids = (
+            db.query(Category.id)
+            .filter(
+                (Category.id == category_id)
+                | (Category.parent_id == category_id)
+            )
+            .subquery()
+        )
+        query = query.filter(Product.category_id.in_(child_ids))
+
+    # ✅ NUEVO: FILTRO POR MARCA
+    if brand:
+        query = query.filter(Product.brand.ilike(f"%{brand}%"))
+
+    # ✅ NUEVO: FILTRO POR ESTADO
+    if condition:
+        query = query.filter(Product.condition == condition)
+
+    total = query.count()
+
+    products = (
+        query
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "items": products,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit,
+    }
 
 # =========================
 # CONFIG
@@ -216,56 +273,56 @@ def delete_product_video(product_id: int, db: Session = Depends(get_db)):
 # SEARCH (NO TOCAR)
 # =========================
 
-@router.get("/search")
-def search_products(
-    q: str | None = None,
-    category_id: int | None = None,
-    page: int = 1,
-    limit: int = 12,
-    db: Session = Depends(get_db),
-):
-    query = (
-        db.query(Product)
-        .join(Category)
-        .options(joinedload(Product.category))
-    )
+# @router.get("/search")
+# def search_products(
+#     q: str | None = None,
+#     category_id: int | None = None,
+#     page: int = 1,
+#     limit: int = 12,
+#     db: Session = Depends(get_db),
+# ):
+#     query = (
+#         db.query(Product)
+#         .join(Category)
+#         .options(joinedload(Product.category))
+#     )
 
-    if q:
-        query = query.filter(
-            or_(
-                Product.name.ilike(f"%{q}%"),
-                Product.description.ilike(f"%{q}%"),
-            )
-        )
+#     if q:
+#         query = query.filter(
+#             or_(
+#                 Product.name.ilike(f"%{q}%"),
+#                 Product.description.ilike(f"%{q}%"),
+#             )
+#         )
 
-    if category_id:
-        # incluye productos de la categoría
-        # y de sus hijas directas
-        child_ids = (
-            db.query(Category.id)
-            .filter(
-                (Category.id == category_id)
-                | (Category.parent_id == category_id)
-            )
-            .subquery()
-        )
+#     if category_id:
+#         # incluye productos de la categoría
+#         # y de sus hijas directas
+#         child_ids = (
+#             db.query(Category.id)
+#             .filter(
+#                 (Category.id == category_id)
+#                 | (Category.parent_id == category_id)
+#             )
+#             .subquery()
+#         )
 
-        query = query.filter(Product.category_id.in_(child_ids))
+#         query = query.filter(Product.category_id.in_(child_ids))
 
-    total = query.distinct().count()
+#     total = query.distinct().count()
 
-    products = (
-        query
-        .distinct()
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .all()
-    )
+#     products = (
+#         query
+#         .distinct()
+#         .offset((page - 1) * limit)
+#         .limit(limit)
+#         .all()
+#     )
 
-    return {
-        "items": products,
-        "total": total,
-        "page": page,
-        "pages": (total + limit - 1) // limit,
-    }
+#     return {
+#         "items": products,
+#         "total": total,
+#         "page": page,
+#         "pages": (total + limit - 1) // limit,
+#     }
 

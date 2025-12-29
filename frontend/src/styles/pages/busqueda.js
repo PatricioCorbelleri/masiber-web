@@ -138,4 +138,32 @@ export const busqueda = {
     color: "white",
     borderColor: colors.verdePetroleo,
   },
+
+  filterBtn: {
+  display: "block",
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  background: "white",
+  marginBottom: "6px",
+  cursor: "pointer",
+  textAlign: "left",   // 👈 IMPORTANTE
+},
+
+btnExport: {
+  flex: 1,
+  padding: "8px 12px",
+  borderRadius: "8px",
+  border: "none",
+  background: colors.verdePetroleo,
+  color: "white",
+  cursor: "pointer",
+  fontFamily: "Inter",
+  fontWeight: 600,
+  fontSize: "13px",
+},
+
+
+
 };
