@@ -18,6 +18,7 @@ export const navbar = {
     padding: "12px 20px",
     display: "flex",
     alignItems: "center",
+    gap: "24px",
   },
 
   left: {
@@ -71,67 +72,33 @@ export const navbar = {
   right: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "18px",
   },
 
-  btnPrimary: {
-    background: colors.turquesa,
-    padding: "8px 18px",
-    borderRadius: "8px",
+  usdWrapper: {
+    minWidth: "120px",
+    display: "flex",
+    justifyContent: "center",
+  },
+
+  usd: {
     color: "white",
+    fontFamily: "Inter",
+    fontSize: "14px",
+    fontWeight: 700,
+    opacity: 0.9,
+    whiteSpace: "nowrap",
+  },
+
+  whatsapp: {
+    background: "#25D366",
+    width: "38px",
+    height: "38px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     textDecoration: "none",
-    fontFamily: "Montserrat",
-    fontWeight: "700",
-  },
-
-  btnGhost: {
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.35)",
-    color: "white",
-    padding: "8px 16px",
-    borderRadius: "8px",
-    fontFamily: "Montserrat",
-    cursor: "pointer",
-  },
-
-  dropdown: {
-    position: "relative",
-  },
-
-  dropdownMenu: (open) => ({
-    position: "absolute",
-    top: "44px",
-    right: 0,
-    background: "white",
-    borderRadius: "12px",
-    minWidth: "200px",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.25)",
-    overflow: "hidden",
-    transition: "opacity .18s ease, transform .18s ease",
-    zIndex: 1000,
-    paddingTop: "6px",
-    opacity: open ? 1 : 0,
-    transform: open ? "translateY(0)" : "translateY(-8px)",
-    pointerEvents: open ? "auto" : "none",
-  }),
-
-  dropdownItem: {
-    width: "100%",
-    textAlign: "left",
-    padding: "12px 16px",
-    fontFamily: "Inter",
-    fontSize: "14px",
-    color: "#223",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-
-  dropdownEmpty: {
-    display: "block",
-    padding: "14px",
-    fontFamily: "Inter",
-    fontSize: "14px",
-    color: "#777",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
   },
 };

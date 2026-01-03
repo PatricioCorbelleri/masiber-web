@@ -5,7 +5,6 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
 import { busqueda } from "../styles";
 import ProductCard from "../components/ProductCard";
 import ProductCardSkeleton from "../components/ProductCardSkeleton";
@@ -41,7 +40,6 @@ export default function Busqueda() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Mantiene abierta la rama del acordeón
   const [openPath, setOpenPath] = useState([]);
 
   /* ===================== CARGAR CATEGORÍAS ===================== */
@@ -99,57 +97,134 @@ export default function Busqueda() {
 
   /* ===================== EXPORT HELPERS ===================== */
 
-  const renderCategoryPath = (category) => {
-    if (!category) return "";
-    if (!category.parent) return category.name;
-    return `${category.parent.name} > ${category.name}`;
+  const getCategorySortKey = (p) => {
+    if (!p.category) return "";
+    if (!p.category.parent) return p.category.name;
+    return `${p.category.parent.name} - ${p.category.name}`;
   };
 
   const buildExportRows = () =>
-    products.map((p) => ({
-      Nombre: p.name,
-      Marca: p.brand || "",
-      Estado: p.condition || "",
-      Categoría: renderCategoryPath(p.category),
-      "Precio USD": p.price_usd ?? "",
-      Stock: p.stock ?? 0,
-    }));
+    [...products]
+      .sort((a, b) =>
+        getCategorySortKey(a).localeCompare(getCategorySortKey(b))
+      )
+      .map((p) => ({
+        Producto: p.name,
+        Marca: p.brand || "",
+        Estado: p.condition || "",
+        Precio: p.price_usd ? `USD ${p.price_usd}` : "Consultar",
+      }));
+
+  const getFiltersDescription = () => {
+    const parts = [];
+
+    if (categoryId) {
+      const findCategory = (nodes) => {
+        for (const c of nodes) {
+          if (String(c.id) === String(categoryId)) return c;
+          if (c.children) {
+            const found = findCategory(c.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const cat = findCategory(categories);
+      if (cat) {
+        if (cat.parent) {
+          parts.push(`Categoría: ${cat.parent.name} > ${cat.name}`);
+        } else {
+          parts.push(`Categoría: ${cat.name}`);
+        }
+      }
+    }
+
+    if (condition) {
+      const label =
+        CONDITIONS.find((c) => c.value === condition)?.label || condition;
+      parts.push(`Estado: ${label}`);
+    }
+
+    if (brand) {
+      parts.push(`Marca: ${brand}`);
+    }
+
+    return parts.length
+      ? `Filtrado por: ${parts.join(" · ")}`
+      : "Listado completo de productos";
+  };
+
+  /* ===================== LIMPIAR FILTROS ===================== */
+
+  const clearFilters = () => {
+    setCategoryId("");
+    setCondition("");
+    setBrand("");
+    setPage(1);
+    setOpenPath([]);
+  };
+
+  /* ===================== EXCEL ===================== */
 
   const exportToExcel = () => {
     if (!products.length) return;
 
-    const worksheet = XLSX.utils.json_to_sheet(buildExportRows());
+    const worksheet = XLSX.utils.json_to_sheet([]);
+
+    XLSX.utils.sheet_add_aoa(
+      worksheet,
+      [[getFiltersDescription()]],
+      { origin: "A1" }
+    );
+
+    XLSX.utils.sheet_add_json(
+      worksheet,
+      buildExportRows(),
+      { origin: "A3" }
+    );
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Productos");
 
-    XLSX.writeFile(workbook, "productos_filtrados.xlsx");
+    XLSX.writeFile(workbook, "MASIBER_productos.xlsx");
   };
+
+  /* ===================== PDF ===================== */
 
   const exportToPDF = () => {
     if (!products.length) return;
 
-    const doc = new jsPDF("l", "mm", "a4");
-    doc.setFontSize(14);
-    doc.text("Listado de Productos", 14, 15);
+    const doc = new jsPDF("p", "mm", "a4");
 
-    const rows = buildExportRows();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("MASIBER", 14, 18);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(getFiltersDescription(), 14, 26);
 
     autoTable(doc, {
-  startY: 22,
-  head: [Object.keys(rows[0])],
-  body: rows.map((r) => Object.values(r)),
-  styles: { fontSize: 9 },
-  headStyles: { fillColor: [40, 40, 40] },
-});
+      startY: 32,
+      head: [Object.keys(buildExportRows()[0])],
+      body: buildExportRows().map((r) => Object.values(r)),
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: {
+        fillColor: [20, 70, 75],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: { fillColor: [245, 248, 249] },
+    });
 
-
-    doc.save("productos_filtrados.pdf");
+    doc.save("MASIBER_productos.pdf");
   };
 
   /* ===================== CATEGORÍAS (ACORDEÓN) ===================== */
 
-  const renderCategoryAccordion = (nodes, level = 0) => {
-    return nodes.map((c) => {
+  const renderCategoryAccordion = (nodes, level = 0) =>
+    nodes.map((c) => {
       const isOpen = openPath.includes(c.id);
       const isActive = String(categoryId) === String(c.id);
       const hasChildren = c.children && c.children.length > 0;
@@ -162,8 +237,6 @@ export default function Busqueda() {
               ...(isActive ? busqueda.filterBtnActive : {}),
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
-              textAlign: "left",
             }}
             onClick={() => {
               if (hasChildren) {
@@ -180,12 +253,7 @@ export default function Busqueda() {
             }}
           >
             <span>{c.name}</span>
-
-            {hasChildren && (
-              <span style={{ fontSize: 12, opacity: 0.7 }}>
-                {isOpen ? "▾" : "▸"}
-              </span>
-            )}
+            {hasChildren && <span>{isOpen ? "▾" : "▸"}</span>}
           </button>
 
           {isOpen &&
@@ -194,7 +262,6 @@ export default function Busqueda() {
         </div>
       );
     });
-  };
 
   /* ===================== RENDER ===================== */
 
@@ -202,6 +269,17 @@ export default function Busqueda() {
     <div style={busqueda.wrapper}>
       <aside style={busqueda.sidebar}>
         <h3 style={busqueda.filterTitle}>Filtros</h3>
+        {(categoryId || condition || brand) && (
+          <div style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              style={busqueda.btnClear}
+              onClick={clearFilters}
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
 
         <div style={busqueda.filterBlock}>
           <p style={busqueda.filterLabel}>Categorías</p>
@@ -232,10 +310,9 @@ export default function Busqueda() {
         <div style={busqueda.filterBlock}>
           <p style={busqueda.filterLabel}>Marca</p>
           <input
-            type="text"
+            style={busqueda.input}
             placeholder="Ej: Agrometal"
             value={brand}
-            style={busqueda.input}
             onChange={(e) => {
               setBrand(e.target.value);
               setPage(1);
@@ -243,13 +320,11 @@ export default function Busqueda() {
           />
         </div>
 
-        {/* 🔥 EXPORTACIÓN */}
         {!loading && products.length > 0 && (
           <div style={{ marginTop: 20 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+            <p style={{ fontSize: 13, fontWeight: 600 }}>
               Exportar resultados
             </p>
-
             <div style={{ display: "flex", gap: 10 }}>
               <button style={busqueda.btnExport} onClick={exportToExcel}>
                 Excel
@@ -286,25 +361,6 @@ export default function Busqueda() {
           <div style={busqueda.grid}>
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div style={busqueda.pagination}>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                style={{
-                  ...busqueda.pageBtn,
-                  ...(page === i + 1
-                    ? busqueda.pageBtnActive
-                    : {}),
-                }}
-                onClick={() => setPage(i + 1)}
-              >
-                {i + 1}
-              </button>
             ))}
           </div>
         )}
