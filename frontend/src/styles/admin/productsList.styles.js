@@ -15,6 +15,36 @@ export const productsListStyles = {
     fontSize: "14px",
   },
 
+  actionsWrap: {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "4px",
+  whiteSpace: "nowrap",
+},
+
+priceWrap: {
+  display: "inline-flex",
+  whiteSpace: "nowrap",
+  fontWeight: 600,
+},
+
+tdName: {
+  padding: "14px 8px 14px 14px", // menos a la derecha
+  fontSize: "14px",
+  color: "#223",
+  verticalAlign: "top",
+},
+
+tdDescription: {
+  padding: "14px 14px 14px 8px", // menos a la izquierda
+  fontSize: "14px",
+  color: "#223",
+  verticalAlign: "top",
+},
+
+
+
+
   headerRow: {
     display: "flex",
     justifyContent: "space-between",

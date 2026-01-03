@@ -39,24 +39,27 @@ export default function ProductsTable({
       <tbody>
         {products.map((p) => (
           <tr key={p.id} style={s.tr}>
-            <td style={s.tdStrong}>{p.name}</td>
+            <td style={{ ...s.tdName, ...s.tdStrong }}>
+  {p.name}
+</td>
 
-            <td style={s.td}>
-              {p.description?.length > 60 ? (
-                <>
-                  {p.description.slice(0, 60)}…
-                  <button
-                    type="button"
-                    style={s.btnLink}
-                    onClick={() => onViewDescription(p)}
-                  >
-                    Ver más
-                  </button>
-                </>
-              ) : (
-                p.description || "—"
-              )}
-            </td>
+<td style={s.tdDescription}>
+  {p.description?.length > 60 ? (
+    <>
+      {p.description.slice(0, 60)}…
+      <button
+        type="button"
+        style={s.btnLink}
+        onClick={() => onViewDescription(p)}
+      >
+        Ver más
+      </button>
+    </>
+  ) : (
+    p.description || "—"
+  )}
+</td>
+
 
             {/* MARCA */}
             <td style={s.td}>{p.brand || "—"}</td>
@@ -65,7 +68,12 @@ export default function ProductsTable({
             <td style={s.td}>{renderCondition(p.condition)}</td>
 
             {/* PRECIO */}
-            <td style={s.td}>USD {formatUSD(p.price_usd)}</td>
+            <td style={s.td}>
+  <span style={s.priceWrap}>
+    USD {formatUSD(p.price_usd)}
+  </span>
+</td>
+
 
             <td style={s.td}>{p.stock ?? 0}</td>
 
@@ -75,21 +83,24 @@ export default function ProductsTable({
             </td>
 
             <td style={{ ...s.td, textAlign: "right" }}>
-              <Link
-                to={`/admin/productos/editar/${p.id}`}
-                style={s.btnEdit}
-              >
-                Editar
-              </Link>
+  <div style={s.actionsWrap}>
+    <Link
+      to={`/admin/productos/editar/${p.id}`}
+      style={s.btnEdit}
+    >
+      Editar
+    </Link>
 
-              <button
-                type="button"
-                style={s.btnDelete}
-                onClick={() => onDelete(p)}
-              >
-                Eliminar
-              </button>
-            </td>
+    <button
+      type="button"
+      style={s.btnDelete}
+      onClick={() => onDelete(p)}
+    >
+      Eliminar
+    </button>
+  </div>
+</td>
+
           </tr>
         ))}
       </tbody>
