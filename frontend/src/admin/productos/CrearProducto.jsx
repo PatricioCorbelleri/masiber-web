@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import ProductForm from "./ProductForm";
@@ -9,16 +9,26 @@ export default function CrearProducto() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    brand: "",
+    brand_id: "",
     condition: "",
     price_usd: "",
     stock: 0,
   });
 
+  const [brands, setBrands] = useState([]);
   const [categoryId, setCategoryId] = useState("");
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  /* ===================== MARCAS ===================== */
+
+  useEffect(() => {
+    api
+      .get("/brands")
+      .then((res) => setBrands(res.data || []))
+      .catch(() => setBrands([]));
+  }, []);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -31,7 +41,7 @@ export default function CrearProducto() {
       return;
     }
 
-    if (!form.brand.trim()) {
+    if (!form.brand_id) {
       alert("La marca es obligatoria");
       return;
     }
@@ -53,7 +63,7 @@ export default function CrearProducto() {
       const res = await api.post("/products", {
         name: form.name,
         description: form.description,
-        brand: form.brand,
+        brand_id: Number(form.brand_id),
         condition: form.condition,
         price_usd: form.price_usd ? Number(form.price_usd) : null,
         stock: Number(form.stock),
@@ -96,6 +106,7 @@ export default function CrearProducto() {
       title="Crear Producto"
       form={form}
       onChange={onChange}
+      brands={brands}
       categoryId={categoryId}
       setCategoryId={setCategoryId}
       images={images}

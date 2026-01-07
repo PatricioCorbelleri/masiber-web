@@ -11,6 +11,16 @@ class ProductCondition(str, Enum):
     CASI_NUEVO = "CASI_NUEVO"
     USADO = "USADO"
 
+
+# =========================
+# TIPO DE MARGEN
+# =========================
+
+class MarginType(str, Enum):
+    PERCENT = "PERCENT"
+    FIXED = "FIXED"
+
+
 # =========================
 # CATEGORIAS
 # =========================
@@ -40,10 +50,30 @@ class CategoryOut(CategoryBase):
     class Config:
         from_attributes = True
 
+
 class CategoryTree(BaseModel):
     id: int
     name: str
     children: List["CategoryTree"] = []
+
+    class Config:
+        from_attributes = True
+
+
+# =========================
+# MARCAS
+# =========================
+
+class BrandBase(BaseModel):
+    name: str
+
+
+class BrandCreate(BrandBase):
+    pass
+
+
+class BrandOut(BrandBase):
+    id: int
 
     class Config:
         from_attributes = True
@@ -56,32 +86,39 @@ class CategoryTree(BaseModel):
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
-    price_usd: Optional[float] = None
-    stock: int = 0
 
-    brand: Optional[str] = None
-    condition: ProductCondition = ProductCondition.USADO
-
-    # 👉 categoría hoja
+    # 👉 relaciones
     category_id: int
+    brand_id: int
+
+    condition: ProductCondition = ProductCondition.USADO
+    stock: int = 0
 
     images: List[str] = Field(default_factory=list)
     video: Optional[str] = None
 
 
 class ProductCreate(ProductBase):
-    pass
+    # 🔒 datos internos de negocio (solo admin)
+    cost_usd: float
+    margin_type: MarginType
+    margin_value: float
 
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    price_usd: Optional[float] = None
+
+    category_id: Optional[int] = None
+    brand_id: Optional[int] = None
+
+    condition: Optional[ProductCondition] = None
     stock: Optional[int] = None
 
-    brand: Optional[str] = None
-    condition: Optional[ProductCondition] = None
-    category_id: Optional[int] = None
+    # 🔒 negocio
+    cost_usd: Optional[float] = None
+    margin_type: Optional[MarginType] = None
+    margin_value: Optional[float] = None
 
     images: Optional[List[str]] = None
     video: Optional[str] = None
@@ -94,12 +131,19 @@ class ProductOut(BaseModel):
     id: int
     name: str
     description: Optional[str] = None
-    price_usd: Optional[float] = None
-    stock: int
 
-    brand: Optional[str]
+    # 🔒 negocio (visible solo admin)
+    cost_usd: Optional[float]
+    margin_type: Optional[MarginType]
+    margin_value: Optional[float]
+
+    # ✅ precio final calculado
+    price_usd: Optional[float]
+
+    stock: int
     condition: ProductCondition
 
+    brand: BrandOut
     category: CategoryOut
 
     images: List[str] = Field(default_factory=list)
@@ -108,9 +152,57 @@ class ProductOut(BaseModel):
     class Config:
         from_attributes = True
 
+class ProductAdminOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+
+    cost_usd: Optional[float]
+    margin_type: Optional[MarginType]
+    margin_value: Optional[float]
+
+    price_usd: Optional[float]
+
+    stock: int
+    condition: ProductCondition
+
+    brand: BrandOut
+    category: CategoryOut
+
+    images: List[str] = Field(default_factory=list)
+    video: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ProductPublicOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+
+    price_usd: Optional[float]
+
+    condition: ProductCondition
+
+    brand: BrandOut
+    category: CategoryOut
+
+    images: List[str] = Field(default_factory=list)
+    video: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class BulkPriceUpdate(BaseModel):
+    brand_id: Optional[int] = None
+    category_id: Optional[int] = None
+
+    margin_type: MarginType
+    margin_value: float
+
 
 # =========================
-# AUTH
+# AUTH (NO TOCAR)
 # =========================
 
 class UserLogin(BaseModel):
@@ -129,4 +221,3 @@ class UserOut(BaseModel):
 
 
 CategoryTree.model_rebuild()
-

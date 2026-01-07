@@ -51,6 +51,12 @@ export default function AdminLayout() {
             />
 
             <SidebarLink
+              to="/admin/marcas"
+              label="Marcas"
+              active={isActive("/admin/marcas")}
+            />
+
+            <SidebarLink
               to="/admin/categories"
               label="Categorías"
               active={isActive("/admin/categories")}

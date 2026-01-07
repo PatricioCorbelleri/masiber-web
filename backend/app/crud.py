@@ -10,6 +10,8 @@ from app.models import (
     Category,
 )
 from app import schemas
+from app.models import Brand
+from app.utils.pricing import calculate_price
 
 # =========================
 # HELPERS
@@ -28,6 +30,94 @@ def is_leaf_category(db: Session, category_id: int) -> bool:
     return children == 0
 
 
+def calculate_price(cost_usd: float | None, margin_value: float | None, margin_type: str | None):
+    """
+    Calcula el precio final en USD.
+    Todo SIN IVA.
+    """
+    if cost_usd is None or margin_value is None or margin_type is None:
+        return None
+
+    if margin_type == "PERCENT":
+        return round(cost_usd * (1 + margin_value / 100), 2)
+
+    if margin_type == "FIXED":
+        return round(cost_usd + margin_value, 2)
+
+    return None
+
+def bulk_update_prices(
+    db: Session,
+    *,
+    brand_id: int | None,
+    category_id: int | None,
+    margin_type,
+    margin_value: float,
+):
+    query = db.query(Product)
+
+    if brand_id:
+        query = query.filter(Product.brand_id == brand_id)
+
+    if category_id:
+        child_ids = (
+            db.query(Category.id)
+            .filter(
+                (Category.id == category_id)
+                | (Category.parent_id == category_id)
+            )
+            .subquery()
+        )
+        query = query.filter(Product.category_id.in_(child_ids))
+
+    products = query.all()
+
+    updated = 0
+
+    for product in products:
+        product.margin_type = margin_type
+        product.margin_value = margin_value
+        product.price_usd = calculate_price(
+            product.cost_usd,
+            margin_value,
+            margin_type,
+        )
+        updated += 1
+
+    db.commit()
+    return updated
+
+# =========================
+# BRANDS
+# =========================
+
+def list_brands(db: Session):
+    return db.query(Brand).order_by(Brand.name).all()
+
+
+def create_brand(db: Session, brand: schemas.BrandCreate):
+    name = brand.name.strip().capitalize()
+
+    exists = db.query(Brand).filter(Brand.name == name).first()
+    if exists:
+        raise ValueError("La marca ya existe")
+
+    db_brand = Brand(name=name)
+    db.add(db_brand)
+    db.commit()
+    db.refresh(db_brand)
+    return db_brand
+
+
+def delete_brand(db: Session, brand_id: int):
+    brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    if not brand:
+        return None
+
+    db.delete(brand)
+    db.commit()
+    return True
+
 # =========================
 # PRODUCTS
 # =========================
@@ -35,9 +125,7 @@ def is_leaf_category(db: Session, category_id: int) -> bool:
 def list_products(db: Session, skip: int = 0, limit: int = 50):
     return (
         db.query(Product)
-        .options(
-            selectinload(Product.category)
-        )
+        .options(selectinload(Product.category))
         .offset(skip)
         .limit(limit)
         .all()
@@ -58,6 +146,13 @@ def create_product(db: Session, product: schemas.ProductCreate):
     if not is_leaf_category(db, category.id):
         raise ValueError("La categoría seleccionada no es una categoría final")
 
+    # 🔥 CALCULAR PRECIO AUTOMÁTICO
+    data["price_usd"] = calculate_price(
+        cost_usd=data.get("cost_usd"),
+        margin_value=data.get("margin_value"),
+        margin_type=data.get("margin_type"),
+    )
+
     db_product = Product(**data)
     db.add(db_product)
     db.commit()
@@ -68,18 +163,14 @@ def create_product(db: Session, product: schemas.ProductCreate):
 def get_product(db: Session, product_id: int):
     return (
         db.query(Product)
-        .options(
-            selectinload(Product.category)
-        )
+        .options(selectinload(Product.category))
         .filter(Product.id == product_id)
         .first()
     )
 
 
-
 def delete_product(db: Session, product_id: int):
     product = db.query(Product).filter(Product.id == product_id).first()
-
     if not product:
         return None
 
@@ -90,7 +181,6 @@ def delete_product(db: Session, product_id: int):
 
 def update_product(db: Session, product_id: int, product: schemas.ProductUpdate):
     db_product = db.query(Product).filter(Product.id == product_id).first()
-
     if not db_product:
         return None
 
@@ -105,6 +195,14 @@ def update_product(db: Session, product_id: int, product: schemas.ProductUpdate)
         if not is_leaf_category(db, category.id):
             raise ValueError("La categoría seleccionada no es una categoría final")
 
+    # 🔥 RE-CALCULAR PRECIO SI CAMBIA COSTO / MARGEN
+    if any(k in data for k in ["cost_usd", "margin_value", "margin_type"]):
+        cost = data.get("cost_usd", db_product.cost_usd)
+        margin = data.get("margin_value", db_product.margin_value)
+        margin_type = data.get("margin_type", db_product.margin_type)
+
+        db_product.price_usd = calculate_price(cost, margin, margin_type)
+
     for field, value in data.items():
         setattr(db_product, field, value)
 
@@ -117,12 +215,14 @@ def search_products(
     db: Session,
     q: str | None = None,
     category_id: int | None = None,
+    brand_id: int | None = None,
 ):
     query = (
         db.query(Product)
         .join(Category)
         .options(
-            selectinload(Product.category)
+            selectinload(Product.category),
+            selectinload(Product.brand),
         )
     )
 
@@ -136,8 +236,6 @@ def search_products(
         )
 
     if category_id:
-        # Incluye productos de esa categoría hoja
-        # o de cualquier hijo (si se pasa una categoría padre)
         child_ids = (
             db.query(Category.id)
             .filter(
@@ -146,8 +244,10 @@ def search_products(
             )
             .subquery()
         )
-
         query = query.filter(Product.category_id.in_(child_ids))
+
+    if brand_id:
+        query = query.filter(Product.brand_id == brand_id)
 
     return query.order_by(Product.id.desc()).all()
 
@@ -219,11 +319,8 @@ def update_usd_rate(db: Session, new_value: float):
 def list_categories(db: Session):
     return db.query(Category).order_by(Category.name).all()
 
+
 def get_category_tree(db: Session):
-    """
-    Devuelve el árbol completo de categorías.
-    Solo categorías raíz como punto de entrada.
-    """
     roots = (
         db.query(Category)
         .options(selectinload(Category.children))
@@ -248,7 +345,6 @@ def create_category(db: Session, category: schemas.CategoryCreate):
     if exists:
         raise ValueError("La categoría ya existe")
 
-    # Validar parent si viene
     if category.parent_id is not None:
         parent = db.query(Category).filter(Category.id == category.parent_id).first()
         if not parent:
@@ -300,4 +396,3 @@ def delete_category(db: Session, category_id: int):
     except IntegrityError:
         db.rollback()
         raise
-

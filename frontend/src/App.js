@@ -30,6 +30,9 @@ import EditarAdmin from "./admin/admins/EditarAdmin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RequireSuperAdmin from "./admin/RequireSuperAdmin";
 
+import BrandsList from "./admin/brands/BrandsList";
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -54,6 +57,9 @@ function App() {
               <Route path="productos" element={<ProductosList />} />
               <Route path="productos/crear" element={<CrearProducto />} />
               <Route path="productos/editar/:id" element={<EditarProducto />} />
+
+              <Route path="marcas" element={<BrandsList />} />
+
 
               {/* CATEGORÍAS */}
               <Route path="categories" element={<CategoriesList />} />

@@ -9,6 +9,9 @@ from app.database import engine
 from app import models
 from app.routes import auth, products, settings, categories, admins
 from app.routes import admin_auth
+from app.routes import brands
+from app.routes import public_products
+
 
 # =========================
 # Crear app
@@ -74,7 +77,8 @@ app.include_router(products.router)   # /products
 app.include_router(settings.router)   # /settings (USD)
 app.include_router(categories.router)
 app.include_router(admins.router)
-
+app.include_router(brands.router)
+app.include_router(public_products.router)
 
 
 # =========================

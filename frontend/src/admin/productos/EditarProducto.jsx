@@ -10,12 +10,13 @@ export default function EditarProducto() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    brand: "",
+    brand_id: "",
     condition: "",
     price_usd: "",
     stock: 0,
   });
 
+  const [brands, setBrands] = useState([]);
   const [categoryId, setCategoryId] = useState("");
   const [currentImages, setCurrentImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
@@ -24,34 +25,37 @@ export default function EditarProducto() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  /* ===================== LOAD ===================== */
+
   useEffect(() => {
-    cargarProducto();
-    // eslint-disable-next-line
-  }, []);
+    Promise.all([
+      api.get("/brands"),
+      api.get(`/products/${id}`),
+    ])
+      .then(([brandsRes, productRes]) => {
+        const p = productRes.data;
 
-  const cargarProducto = async () => {
-    try {
-      const res = await api.get(`/products/${id}`);
-      const p = res.data;
+        setBrands(brandsRes.data || []);
 
-      setForm({
-        name: p.name || "",
-        description: p.description || "",
-        brand: p.brand || "",
-        condition: p.condition || "",
-        price_usd: p.price_usd ?? "",
-        stock: p.stock ?? 0,
+        setForm({
+          name: p.name || "",
+          description: p.description || "",
+          brand_id: p.brand?.id ?? "",
+          condition: p.condition || "",
+          price_usd: p.price_usd ?? "",
+          stock: p.stock ?? 0,
+        });
+
+        setCategoryId(p.category?.id ?? "");
+        setCurrentImages(p.images || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Error al cargar el producto");
+        navigate("/admin/productos");
       });
-
-      setCategoryId(p.category?.id ?? "");
-      setCurrentImages(p.images || []);
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-      alert("Error al cargar el producto");
-      navigate("/admin/productos");
-    }
-  };
+  }, [id, navigate]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -74,7 +78,7 @@ export default function EditarProducto() {
       return;
     }
 
-    if (!form.brand.trim()) {
+    if (!form.brand_id) {
       alert("La marca es obligatoria");
       return;
     }
@@ -96,7 +100,7 @@ export default function EditarProducto() {
       await api.put(`/products/${id}`, {
         name: form.name,
         description: form.description,
-        brand: form.brand,
+        brand_id: Number(form.brand_id),
         condition: form.condition,
         price_usd: form.price_usd ? Number(form.price_usd) : null,
         stock: Number(form.stock),
@@ -142,6 +146,7 @@ export default function EditarProducto() {
       title="Editar Producto"
       form={form}
       onChange={onChange}
+      brands={brands}
       categoryId={categoryId}
       setCategoryId={setCategoryId}
       images={newImages}

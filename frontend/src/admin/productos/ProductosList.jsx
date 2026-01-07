@@ -30,11 +30,6 @@ export default function ProductosList() {
     load();
   }, []);
 
-  const clone = async (p) => {
-    await api.post(`/products/${p.id}/clone`);
-    load();
-  };
-
   const remove = async () => {
     if (!deleteProduct) return;
     setDeleting(true);
@@ -48,7 +43,9 @@ export default function ProductosList() {
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchBrand = brandFilter
-        ? p.brand?.toLowerCase().includes(brandFilter.toLowerCase())
+        ? p.brand?.name
+            ?.toLowerCase()
+            .includes(brandFilter.toLowerCase())
         : true;
 
       const matchCategory = categoryFilter
@@ -134,7 +131,6 @@ export default function ProductosList() {
           <ProductsTable
             products={filteredProducts}
             onViewDescription={setDescProduct}
-            onClone={clone}
             onDelete={setDeleteProduct}
           />
         )}

@@ -268,6 +268,26 @@ def delete_product_video(product_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Video eliminado"}
 
+@router.patch("/prices/bulk")
+def bulk_update_prices(
+    data: schemas.BulkPriceUpdate,
+    db: Session = Depends(get_db),
+):
+    updated = crud.bulk_update_prices(
+        db,
+        brand_id=data.brand_id,
+        category_id=data.category_id,
+        margin_type=data.margin_type,
+        margin_value=data.margin_value,
+    )
+
+    return {
+        "updated": updated,
+        "margin_type": data.margin_type,
+        "margin_value": data.margin_value,
+    }
+
+
 
 # =========================
 # SEARCH (NO TOCAR)

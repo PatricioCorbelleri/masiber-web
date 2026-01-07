@@ -40,67 +40,70 @@ export default function ProductsTable({
         {products.map((p) => (
           <tr key={p.id} style={s.tr}>
             <td style={{ ...s.tdName, ...s.tdStrong }}>
-  {p.name}
-</td>
+              {p.name}
+            </td>
 
-<td style={s.tdDescription}>
-  {p.description?.length > 60 ? (
-    <>
-      {p.description.slice(0, 60)}…
-      <button
-        type="button"
-        style={s.btnLink}
-        onClick={() => onViewDescription(p)}
-      >
-        Ver más
-      </button>
-    </>
-  ) : (
-    p.description || "—"
-  )}
-</td>
-
+            <td style={s.tdDescription}>
+              {p.description?.length > 60 ? (
+                <>
+                  {p.description.slice(0, 60)}…
+                  <button
+                    type="button"
+                    style={s.btnLink}
+                    onClick={() => onViewDescription(p)}
+                  >
+                    Ver más
+                  </button>
+                </>
+              ) : (
+                p.description || "—"
+              )}
+            </td>
 
             {/* MARCA */}
-            <td style={s.td}>{p.brand || "—"}</td>
+            <td style={s.td}>
+              {p.brand?.name || "—"}
+            </td>
 
             {/* ESTADO */}
-            <td style={s.td}>{renderCondition(p.condition)}</td>
+            <td style={s.td}>
+              {renderCondition(p.condition)}
+            </td>
 
             {/* PRECIO */}
             <td style={s.td}>
-  <span style={s.priceWrap}>
-    USD {formatUSD(p.price_usd)}
-  </span>
-</td>
-
+              <span style={s.priceWrap}>
+                {p.price_usd != null
+                  ? `USD ${formatUSD(p.price_usd)}`
+                  : "A consultar"}
+              </span>
+            </td>
 
             <td style={s.td}>{p.stock ?? 0}</td>
 
-            {/* CATEGORÍA JERÁRQUICA */}
+            {/* CATEGORÍA */}
             <td style={s.td}>
               {renderCategoryPath(p.category)}
             </td>
 
             <td style={{ ...s.td, textAlign: "right" }}>
-  <div style={s.actionsWrap}>
-    <Link
-      to={`/admin/productos/editar/${p.id}`}
-      style={s.btnEdit}
-    >
-      Editar
-    </Link>
+              <div style={s.actionsWrap}>
+                <Link
+                  to={`/admin/productos/editar/${p.id}`}
+                  style={s.btnEdit}
+                >
+                  Editar
+                </Link>
 
-    <button
-      type="button"
-      style={s.btnDelete}
-      onClick={() => onDelete(p)}
-    >
-      Eliminar
-    </button>
-  </div>
-</td>
-
+                <button
+                  type="button"
+                  style={s.btnDelete}
+                  onClick={() => onDelete(p)}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </td>
           </tr>
         ))}
       </tbody>
