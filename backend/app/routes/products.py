@@ -9,13 +9,24 @@ from app import crud, schemas
 from app.database import get_db
 from app.models import Product, Category
 
+from app.schemas import (
+    BulkUpdateRequest,
+    BulkPreviewResponse,
+    BulkPreviewItem,
+)
+from app.utils.pricing import apply_bulk_change, calculate_price
+
+
 router = APIRouter(prefix="/products", tags=["products"])
+
+# =========================
+# SEARCH
+# =========================
 
 @router.get("/search")
 def search_products(
     q: str | None = None,
     category_id: int | None = None,
-    brand: str | None = None,
     condition: str | None = None,
     page: int = 1,
     limit: int = 12,
@@ -45,11 +56,6 @@ def search_products(
         )
         query = query.filter(Product.category_id.in_(child_ids))
 
-    # ✅ NUEVO: FILTRO POR MARCA
-    if brand:
-        query = query.filter(Product.brand.ilike(f"%{brand}%"))
-
-    # ✅ NUEVO: FILTRO POR ESTADO
     if condition:
         query = query.filter(Product.condition == condition)
 
@@ -83,7 +89,6 @@ ALLOWED_IMAGE_EXT = ["jpg", "jpeg", "png", "webp"]
 ALLOWED_VIDEO_EXT = ["mp4", "webm", "mov"]
 MAX_VIDEO_SIZE = 50 * 1024 * 1024  # 50MB
 
-
 # =========================
 # PRODUCTS
 # =========================
@@ -100,7 +105,6 @@ def create_product(
     if not category:
         raise HTTPException(status_code=400, detail="Categoría inválida")
 
-    # Validar que sea categoría hoja
     if category.children:
         raise HTTPException(
             status_code=400,
@@ -110,9 +114,7 @@ def create_product(
     return crud.create_product(db, product)
 
 
-
-
-# 🔴 FIX CLAVE: SIN response_model
+# 🔴 SIN response_model A PROPÓSITO
 @router.get("/")
 def read_products(
     skip: int = 0,
@@ -120,8 +122,6 @@ def read_products(
     db: Session = Depends(get_db),
 ):
     return crud.list_products(db, skip=skip, limit=limit)
-
-
 
 
 @router.get("/{product_id}", response_model=schemas.ProductOut)
@@ -165,8 +165,6 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     if not dbp:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return {"message": "Producto eliminado"}
-
-
 
 # =========================
 # IMÁGENES (NO TOCAR)
@@ -214,7 +212,6 @@ async def upload_product_images(
 
     return {"message": "Imágenes cargadas correctamente", "images": product.images}
 
-
 # =========================
 # VIDEO (NO TOCAR)
 # =========================
@@ -251,7 +248,6 @@ async def upload_product_video(
 
     return {"message": "Video cargado correctamente", "video": product.video}
 
-
 @router.delete("/{product_id}/video")
 def delete_product_video(product_id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
@@ -268,81 +264,126 @@ def delete_product_video(product_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Video eliminado"}
 
-@router.patch("/prices/bulk")
-def bulk_update_prices(
-    data: schemas.BulkPriceUpdate,
-    db: Session = Depends(get_db),
-):
-    updated = crud.bulk_update_prices(
-        db,
-        brand_id=data.brand_id,
-        category_id=data.category_id,
-        margin_type=data.margin_type,
-        margin_value=data.margin_value,
+# =========================
+# BULK PREVIEW
+# =========================
+
+@router.post("/bulk-preview", response_model=BulkPreviewResponse)
+def bulk_preview(data: BulkUpdateRequest, db: Session = Depends(get_db)):
+    q = db.query(Product)
+
+    if data.brand_id:
+        q = q.filter(Product.brand_id == data.brand_id)
+
+    if data.category_id:
+        q = q.filter(Product.category_id == data.category_id)
+
+    TOTAL_LIMIT = 50
+
+    total = q.count()
+    products = q.limit(TOTAL_LIMIT).all()
+
+    items = []
+
+    for p in products:
+        current = getattr(p, data.field, None)
+
+        new_value = apply_bulk_change(
+            current,
+            data.action,
+            data.type,
+            data.value,
+        )
+
+        items.append(
+            BulkPreviewItem(
+                id=p.id,
+                name=p.name,
+                old_value=current,
+                new_value=new_value,
+                diff=(
+                    new_value - current
+                    if current is not None and new_value is not None
+                    else None
+                ),
+            )
+        )
+
+    return BulkPreviewResponse(
+        total=total,
+        items=items,
     )
 
-    return {
-        "updated": updated,
-        "margin_type": data.margin_type,
-        "margin_value": data.margin_value,
-    }
-
-
-
 # =========================
-# SEARCH (NO TOCAR)
+# BULK UPDATE
 # =========================
 
-# @router.get("/search")
-# def search_products(
-#     q: str | None = None,
-#     category_id: int | None = None,
-#     page: int = 1,
-#     limit: int = 12,
-#     db: Session = Depends(get_db),
-# ):
-#     query = (
-#         db.query(Product)
-#         .join(Category)
-#         .options(joinedload(Product.category))
-#     )
+@router.put("/bulk-update")
+def bulk_update(data: BulkUpdateRequest, db: Session = Depends(get_db)):
+    q = db.query(Product)
 
-#     if q:
-#         query = query.filter(
-#             or_(
-#                 Product.name.ilike(f"%{q}%"),
-#                 Product.description.ilike(f"%{q}%"),
-#             )
-#         )
+    if data.brand_id:
+        q = q.filter(Product.brand_id == data.brand_id)
 
-#     if category_id:
-#         # incluye productos de la categoría
-#         # y de sus hijas directas
-#         child_ids = (
-#             db.query(Category.id)
-#             .filter(
-#                 (Category.id == category_id)
-#                 | (Category.parent_id == category_id)
-#             )
-#             .subquery()
-#         )
+    if data.category_id:
+        q = q.filter(Product.category_id == data.category_id)
 
-#         query = query.filter(Product.category_id.in_(child_ids))
+    products = q.all()
 
-#     total = query.distinct().count()
+    for p in products:
+        current = getattr(p, data.field, None)
 
-#     products = (
-#         query
-#         .distinct()
-#         .offset((page - 1) * limit)
-#         .limit(limit)
-#         .all()
-#     )
+    # ⛔ Si no hay valor actual, no tocar
+        if current is None:
+            continue
 
-#     return {
-#         "items": products,
-#         "total": total,
-#         "page": page,
-#         "pages": (total + limit - 1) // limit,
-#     }
+        new_value = apply_bulk_change(
+            current,
+            data.action,
+            data.type,
+            data.value,
+        )
 
+    # ⛔ Si el cálculo falla, no tocar
+        if new_value is None:
+            continue
+
+    setattr(p, data.field, new_value)
+
+    # 🔄 Recalcular precio SOLO si corresponde
+    if (
+        p.cost_usd is not None
+        and p.margin_value is not None
+        and p.margin_type
+    ):
+        p.price_usd = calculate_price(
+            p.cost_usd,
+            p.margin_value,
+            p.margin_type,
+        )
+
+
+    # for p in products:
+    #     current = getattr(p, data.field, None)
+
+    #     new_value = apply_bulk_change(
+    #         current,
+    #         data.action,
+    #         data.type,
+    #         data.value,
+    #     )
+
+    #     setattr(p, data.field, new_value)
+
+    #    # Recalcular precio SOLO si hay datos válidos
+    #     if p.cost_usd is not None and p.margin_value is not None and p.margin_type:
+    #         p.price_usd = calculate_price(
+    #             p.cost_usd,
+    #             p.margin_value,
+    #             p.margin_type,
+    # )
+
+
+    db.commit()
+
+    return {"updated": len(products)}

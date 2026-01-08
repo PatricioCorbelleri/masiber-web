@@ -11,6 +11,9 @@ export default function CrearProducto() {
     description: "",
     brand_id: "",
     condition: "",
+    cost_usd: "",
+    margin_type: "",
+    margin_value: "",
     price_usd: "",
     stock: 0,
   });
@@ -22,7 +25,6 @@ export default function CrearProducto() {
   const [loading, setLoading] = useState(false);
 
   /* ===================== MARCAS ===================== */
-
   useEffect(() => {
     api
       .get("/brands")
@@ -30,41 +32,29 @@ export default function CrearProducto() {
       .catch(() => setBrands([]));
   }, []);
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+ const onChange = (e) => {
+  const { name, value } = e.target;
+  setForm((prev) => ({ ...prev, [name]: value }));
+};
+
 
   const guardar = async () => {
-    if (!form.name.trim()) {
-      alert("El nombre es obligatorio");
-      return;
-    }
-
-    if (!form.brand_id) {
-      alert("La marca es obligatoria");
-      return;
-    }
-
-    if (!form.condition) {
-      alert("El estado es obligatorio");
-      return;
-    }
-
-    if (!categoryId) {
-      alert("La categoría es obligatoria");
-      return;
-    }
+    if (!form.name.trim()) return alert("El nombre es obligatorio");
+    if (!form.brand_id) return alert("La marca es obligatoria");
+    if (!form.condition) return alert("El estado es obligatorio");
+    if (!categoryId) return alert("La categoría es obligatoria");
 
     try {
       setLoading(true);
 
-      // 1️⃣ Crear producto base
       const res = await api.post("/products", {
         name: form.name,
-        description: form.description,
+        description: form.description || null,
         brand_id: Number(form.brand_id),
         condition: form.condition,
+        cost_usd: form.cost_usd ? Number(form.cost_usd) : null,
+        margin_type: form.margin_type || null,
+        margin_value: form.margin_value ? Number(form.margin_value) : null,
         price_usd: form.price_usd ? Number(form.price_usd) : null,
         stock: Number(form.stock),
         category_id: Number(categoryId),
@@ -72,24 +62,18 @@ export default function CrearProducto() {
 
       const productId = res.data.id;
 
-      // 2️⃣ Subir imágenes
+      /* IMÁGENES */
       if (images.length > 0) {
         const fd = new FormData();
         images.forEach((img) => fd.append("files", img));
-
-        await api.post(`/products/${productId}/images`, fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await api.post(`/products/${productId}/images`, fd);
       }
 
-      // 3️⃣ Subir video
+      /* VIDEO */
       if (video) {
         const vd = new FormData();
         vd.append("video", video);
-
-        await api.post(`/products/${productId}/video`, vd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await api.post(`/products/${productId}/video`, vd);
       }
 
       navigate("/admin/productos");

@@ -6,6 +6,7 @@ export default function ProductForm({
   title,
   form,
   onChange,
+  brands = [],
   categoryId,
   setCategoryId,
   images,
@@ -48,13 +49,19 @@ export default function ProductForm({
         {/* MARCA */}
         <div style={s.field}>
           <label style={s.label}>Marca *</label>
-          <input
+          <select
             style={s.input}
-            name="brand"
-            value={form.brand}
+            name="brand_id"
+            value={form.brand_id}
             onChange={onChange}
-            placeholder="Ej: Agrometal"
-          />
+          >
+            <option value="">Seleccionar marca</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* ESTADO */}
@@ -66,9 +73,7 @@ export default function ProductForm({
             value={form.condition}
             onChange={onChange}
           >
-            <option value="" disabled>
-              Seleccionar estado
-            </option>
+            <option value="">Seleccionar estado</option>
             <option value="NUEVO">Nuevo</option>
             <option value="CASI_NUEVO">Casi nuevo</option>
             <option value="USADO">Usado</option>
@@ -78,10 +83,46 @@ export default function ProductForm({
         {/* CATEGORÍA */}
         <div style={s.field}>
           <label style={s.label}>Categoría *</label>
-          <CategorySelector
-            value={categoryId}
-            onChange={setCategoryId}
-          />
+          <CategorySelector value={categoryId} onChange={setCategoryId} />
+        </div>
+
+        {/* COSTO + MARGEN */}
+        <div style={s.grid3}>
+          <div style={s.field}>
+            <label style={s.label}>Costo USD</label>
+            <input
+              style={s.input}
+              type="number"
+              name="cost_usd"
+              value={form.cost_usd}
+              onChange={onChange}
+            />
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Tipo de margen</label>
+            <select
+              style={s.input}
+              name="margin_type"
+              value={form.margin_type}
+              onChange={onChange}
+            >
+              <option value="">—</option>
+              <option value="PERCENT">Porcentaje (%)</option>
+              <option value="FIXED">Monto fijo (USD)</option>
+            </select>
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Margen</label>
+            <input
+              style={s.input}
+              type="number"
+              name="margin_value"
+              value={form.margin_value}
+              onChange={onChange}
+            />
+          </div>
         </div>
 
         {/* PRECIO + STOCK */}
@@ -122,6 +163,7 @@ export default function ProductForm({
                     style={s.img}
                   />
                   <button
+                    type="button"
                     style={s.btnDeleteImg}
                     onClick={() => onDeleteImage(img)}
                   >

@@ -40,9 +40,7 @@ class Product(Base):
 
     stock = Column(Integer, default=0)
 
-    # =========================
-    # PRECIOS (SIN IVA)
-    # =========================
+
     cost_usd = Column(Float, nullable=True)        # solo admin
     margin_value = Column(Float, nullable=True)   # % o USD
     margin_type = Column(
@@ -53,9 +51,6 @@ class Product(Base):
 
     price_usd = Column(Float, nullable=True)       # público (calculado)
 
-    # =========================
-    # RELACIONES
-    # =========================
     category_id = Column(
         Integer,
         ForeignKey("categories.id", ondelete="RESTRICT"),
@@ -64,11 +59,12 @@ class Product(Base):
 
     brand_id = Column(
     Integer,
-    ForeignKey("brands.id", ondelete="RESTRICT"),
-    nullable=False
-    )
+    ForeignKey("brands.id", ondelete="SET NULL"),
+    nullable=True
+)
 
     brand = relationship("Brand", back_populates="products")
+
 
     category = relationship("Category", back_populates="products")
 
@@ -121,9 +117,13 @@ class Brand(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, unique=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
-    products = relationship("Product", back_populates="brand")
+    products = relationship(
+        "Product",
+        back_populates="brand",
+        passive_deletes=True
+    )
+
 
 
 

@@ -22,6 +22,31 @@ class MarginType(str, Enum):
 
 
 # =========================
+# PRECIOS 
+# =========================
+
+class BulkUpdateRequest(BaseModel):
+    field: str              # cost_usd | margin_value
+    action: str             # INCREASE | DECREASE
+    type: str               # PERCENT | FIXED
+    value: float
+    brand_id: Optional[int] = None
+    category_id: Optional[int] = None
+
+
+class BulkPreviewItem(BaseModel):
+    id: int
+    name: str
+    old_value: Optional[float]
+    new_value: Optional[float]
+    diff: Optional[float]
+
+
+class BulkPreviewResponse(BaseModel):
+    total: int
+    items: List[BulkPreviewItem]
+
+# =========================
 # CATEGORIAS
 # =========================
 
@@ -132,25 +157,25 @@ class ProductOut(BaseModel):
     name: str
     description: Optional[str] = None
 
-    # 🔒 negocio (visible solo admin)
-    cost_usd: Optional[float]
-    margin_type: Optional[MarginType]
-    margin_value: Optional[float]
-
-    # ✅ precio final calculado
-    price_usd: Optional[float]
-
     stock: int
     condition: ProductCondition
 
-    brand: BrandOut
+    # 💰 precios
+    cost_usd: Optional[float] = None
+    margin_value: Optional[float] = None
+    margin_type: Optional[str] = None
+    price_usd: Optional[float] = None
+
+    # relaciones
     category: CategoryOut
+    brand: Optional[BrandOut] = None
 
     images: List[str] = Field(default_factory=list)
     video: Optional[str] = None
 
     class Config:
         from_attributes = True
+
 
 class ProductAdminOut(BaseModel):
     id: int

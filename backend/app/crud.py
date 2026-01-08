@@ -96,27 +96,34 @@ def list_brands(db: Session):
 
 
 def create_brand(db: Session, brand: schemas.BrandCreate):
-    name = brand.name.strip().capitalize()
-
-    exists = db.query(Brand).filter(Brand.name == name).first()
-    if exists:
-        raise ValueError("La marca ya existe")
-
-    db_brand = Brand(name=name)
+    db_brand = Brand(name=brand.name.strip())
     db.add(db_brand)
     db.commit()
     db.refresh(db_brand)
     return db_brand
 
 
+def update_brand(db: Session, brand_id: int, brand: schemas.BrandCreate):
+    db_brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    if not db_brand:
+        return None
+
+    db_brand.name = brand.name.strip()
+    db.commit()
+    db.refresh(db_brand)
+    return db_brand
+
 def delete_brand(db: Session, brand_id: int):
     brand = db.query(Brand).filter(Brand.id == brand_id).first()
     if not brand:
-        return None
+        return False
 
     db.delete(brand)
     db.commit()
     return True
+
+
+
 
 # =========================
 # PRODUCTS
@@ -125,11 +132,15 @@ def delete_brand(db: Session, brand_id: int):
 def list_products(db: Session, skip: int = 0, limit: int = 50):
     return (
         db.query(Product)
-        .options(selectinload(Product.category))
+        .options(
+            selectinload(Product.category),
+            selectinload(Product.brand),   # 🔥 ESTO FALTABA
+        )
         .offset(skip)
         .limit(limit)
         .all()
     )
+
 
 
 def create_product(db: Session, product: schemas.ProductCreate):
@@ -163,10 +174,14 @@ def create_product(db: Session, product: schemas.ProductCreate):
 def get_product(db: Session, product_id: int):
     return (
         db.query(Product)
-        .options(selectinload(Product.category))
+        .options(
+            selectinload(Product.category),
+            selectinload(Product.brand),   # 🔥
+        )
         .filter(Product.id == product_id)
         .first()
     )
+
 
 
 def delete_product(db: Session, product_id: int):

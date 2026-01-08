@@ -21,11 +21,22 @@ export default function BrandsList() {
     load();
   }, []);
 
-  const remove = async (brand) => {
-    if (!window.confirm(`Eliminar la marca "${brand.name}"?`)) return;
-    await api.delete(`/brands/${brand.id}`);
+ const remove = async (id) => {
+  if (!window.confirm("¿Eliminar esta marca?")) return;
+
+  try {
+    await api.delete(`/brands/${id}`);
     load();
-  };
+  } catch (err) {
+    alert(
+      err?.response?.data?.detail ||
+      "No se pudo eliminar la marca"
+    );
+  }
+};
+
+
+
 
   return (
     <div>
@@ -76,11 +87,12 @@ export default function BrandsList() {
                     </button>
 
                     <button
-                      style={s.btnDelete}
-                      onClick={() => remove(b)}
-                    >
-                      Eliminar
-                    </button>
+  style={s.btnDelete}
+  onClick={() => remove(b.id)}
+>
+  Eliminar
+</button>
+
                   </td>
                 </tr>
               ))}

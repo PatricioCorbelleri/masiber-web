@@ -21,6 +21,14 @@ export default function ProductsTable({
     return condition;
   };
 
+  const renderMargin = (p) => {
+    if (p.margin_value == null) return "—";
+    if (p.margin_type === "PERCENT") {
+      return `${p.margin_value}%`;
+    }
+    return `USD ${formatUSD(p.margin_value)}`;
+  };
+
   return (
     <table style={s.table}>
       <thead>
@@ -29,7 +37,9 @@ export default function ProductsTable({
           <th style={s.th}>Descripción</th>
           <th style={s.th}>Marca</th>
           <th style={s.th}>Estado</th>
-          <th style={s.th}>Precio</th>
+          <th style={s.th}>Costo USD</th>
+          <th style={s.th}>Margen</th>
+          <th style={s.th}>Precio USD</th>
           <th style={s.th}>Stock</th>
           <th style={s.th}>Categoría</th>
           <th style={{ ...s.th, textAlign: "right" }}>Acciones</th>
@@ -39,24 +49,23 @@ export default function ProductsTable({
       <tbody>
         {products.map((p) => (
           <tr key={p.id} style={s.tr}>
-            <td style={{ ...s.tdName, ...s.tdStrong }}>
+            {/* NOMBRE */}
+            <td style={{ ...s.td, ...s.tdStrong }}>
               {p.name}
             </td>
 
-            <td style={s.tdDescription}>
-              {p.description?.length > 60 ? (
-                <>
-                  {p.description.slice(0, 60)}…
-                  <button
-                    type="button"
-                    style={s.btnLink}
-                    onClick={() => onViewDescription(p)}
-                  >
-                    Ver más
-                  </button>
-                </>
+            {/* DESCRIPCIÓN */}
+            <td style={s.td}>
+              {p.description ? (
+                <button
+                  type="button"
+                  style={s.btnLink}
+                  onClick={() => onViewDescription(p)}
+                >
+                  Ver descripción
+                </button>
               ) : (
-                p.description || "—"
+                "—"
               )}
             </td>
 
@@ -70,22 +79,38 @@ export default function ProductsTable({
               {renderCondition(p.condition)}
             </td>
 
-            {/* PRECIO */}
+            {/* COSTO */}
             <td style={s.td}>
-              <span style={s.priceWrap}>
+              {p.cost_usd != null
+                ? `USD ${formatUSD(p.cost_usd)}`
+                : "—"}
+            </td>
+
+            {/* MARGEN */}
+            <td style={s.td}>
+              {renderMargin(p)}
+            </td>
+
+            {/* PRECIO FINAL */}
+            <td style={s.td}>
+              <strong>
                 {p.price_usd != null
                   ? `USD ${formatUSD(p.price_usd)}`
                   : "A consultar"}
-              </span>
+              </strong>
             </td>
 
-            <td style={s.td}>{p.stock ?? 0}</td>
+            {/* STOCK */}
+            <td style={s.td}>
+              {p.stock ?? 0}
+            </td>
 
             {/* CATEGORÍA */}
             <td style={s.td}>
               {renderCategoryPath(p.category)}
             </td>
 
+            {/* ACCIONES */}
             <td style={{ ...s.td, textAlign: "right" }}>
               <div style={s.actionsWrap}>
                 <Link

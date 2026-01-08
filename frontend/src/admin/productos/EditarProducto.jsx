@@ -12,6 +12,9 @@ export default function EditarProducto() {
     description: "",
     brand_id: "",
     condition: "",
+    cost_usd: "",
+    margin_type: "",
+    margin_value: "",
     price_usd: "",
     stock: 0,
   });
@@ -26,7 +29,6 @@ export default function EditarProducto() {
   const [saving, setSaving] = useState(false);
 
   /* ===================== LOAD ===================== */
-
   useEffect(() => {
     Promise.all([
       api.get("/brands"),
@@ -42,6 +44,9 @@ export default function EditarProducto() {
           description: p.description || "",
           brand_id: p.brand?.id ?? "",
           condition: p.condition || "",
+          cost_usd: p.cost_usd ?? "",
+          margin_type: p.margin_type ?? "",
+          margin_value: p.margin_value ?? "",
           price_usd: p.price_usd ?? "",
           stock: p.stock ?? 0,
         });
@@ -57,11 +62,13 @@ export default function EditarProducto() {
       });
   }, [id, navigate]);
 
+  /* ===================== CHANGE ===================== */
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  /* ===================== IMÁGENES ===================== */
   const borrarImagen = async (img) => {
     if (!window.confirm("¿Eliminar esta imagen?")) return;
 
@@ -72,26 +79,12 @@ export default function EditarProducto() {
     setCurrentImages((prev) => prev.filter((i) => i !== img));
   };
 
+  /* ===================== GUARDAR ===================== */
   const guardar = async () => {
-    if (!form.name.trim()) {
-      alert("El nombre es obligatorio");
-      return;
-    }
-
-    if (!form.brand_id) {
-      alert("La marca es obligatoria");
-      return;
-    }
-
-    if (!form.condition) {
-      alert("El estado es obligatorio");
-      return;
-    }
-
-    if (!categoryId) {
-      alert("La categoría es obligatoria");
-      return;
-    }
+    if (!form.name.trim()) return alert("El nombre es obligatorio");
+    if (!form.brand_id) return alert("La marca es obligatoria");
+    if (!form.condition) return alert("El estado es obligatorio");
+    if (!categoryId) return alert("La categoría es obligatoria");
 
     try {
       setSaving(true);
@@ -99,9 +92,12 @@ export default function EditarProducto() {
       // 1️⃣ Actualizar datos base
       await api.put(`/products/${id}`, {
         name: form.name,
-        description: form.description,
+        description: form.description || null,
         brand_id: Number(form.brand_id),
         condition: form.condition,
+        cost_usd: form.cost_usd ? Number(form.cost_usd) : null,
+        margin_type: form.margin_type || null,
+        margin_value: form.margin_value ? Number(form.margin_value) : null,
         price_usd: form.price_usd ? Number(form.price_usd) : null,
         stock: Number(form.stock),
         category_id: Number(categoryId),
@@ -116,7 +112,7 @@ export default function EditarProducto() {
           headers: { "Content-Type": "multipart/form-data" },
         });
 
-        setCurrentImages(res.data.images);
+        setCurrentImages(res.data.images || []);
         setNewImages([]);
       }
 
