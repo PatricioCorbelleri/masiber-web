@@ -120,7 +120,7 @@ function ProductDetail() {
           </p>
 
           <p>
-            <strong>Marca:</strong> {product.brand || "—"}
+            <strong>Marca:</strong> {product.brand?.name || "—"}
           </p>
 
           <p>

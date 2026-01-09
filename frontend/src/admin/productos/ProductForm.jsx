@@ -75,7 +75,7 @@ export default function ProductForm({
           >
             <option value="">Seleccionar estado</option>
             <option value="NUEVO">Nuevo</option>
-            <option value="CASI_NUEVO">Casi nuevo</option>
+            {/* <option value="CASI_NUEVO">Casi nuevo</option> */}
             <option value="USADO">Usado</option>
           </select>
         </div>

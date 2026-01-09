@@ -318,7 +318,7 @@ def bulk_preview(data: BulkUpdateRequest, db: Session = Depends(get_db)):
 # BULK UPDATE
 # =========================
 
-@router.put("/bulk-update")
+@router.post("/bulk-update")
 def bulk_update(data: BulkUpdateRequest, db: Session = Depends(get_db)):
     q = db.query(Product)
 

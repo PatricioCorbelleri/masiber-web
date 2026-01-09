@@ -77,13 +77,36 @@ export default function ProductosList() {
     return Array.from(map.entries());
   }, [products]);
 
+  // 🔹 Categorías dependientes de la marca
   const categories = useMemo(() => {
     const map = new Map();
+
     products.forEach((p) => {
-      if (p.category) map.set(p.category.id, p.category.name);
+      if (!p.category) return;
+
+      // si hay marca seleccionada, filtrar por marca
+      if (brandFilter && String(p.brand?.id) !== String(brandFilter)) {
+        return;
+      }
+
+      map.set(p.category.id, p.category.name);
     });
+
     return Array.from(map.entries());
-  }, [products]);
+  }, [products, brandFilter]);
+
+  // 🔹 Si la categoría actual no es válida para la marca, limpiarla
+  useEffect(() => {
+    if (!categoryFilter) return;
+
+    const exists = categories.some(
+      ([id]) => String(id) === String(categoryFilter)
+    );
+
+    if (!exists) {
+      setCategoryFilter("");
+    }
+  }, [categories, categoryFilter]);
 
   /* ===================== PAYLOAD ===================== */
   const buildPayload = () => ({
@@ -126,7 +149,6 @@ export default function ProductosList() {
 
       setPreviewOpen(false);
     } finally {
-      // 🔴 FIX CLAVE
       setPreviewLoading(false);
     }
   };
@@ -134,7 +156,7 @@ export default function ProductosList() {
   /* ===================== CONFIRMAR ===================== */
   const confirmarCambios = async () => {
     try {
-      await api.put("/products/bulk-update", buildPayload());
+      await api.post("/products/bulk-update", buildPayload());
       setPreviewOpen(false);
       load();
     } catch (err) {
@@ -191,6 +213,18 @@ export default function ProductosList() {
               ))}
             </select>
           </div>
+
+          {(brandFilter || categoryFilter) && (
+            <button
+              style={s.btnCancel}
+              onClick={() => {
+                setBrandFilter("");
+                setCategoryFilter("");
+              }}
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
