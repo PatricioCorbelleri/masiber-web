@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 from app import crud, schemas
 from app.database import get_db
-from app.models import Product, Category
+from app.models import Product, Category, Brand
 
 from app.schemas import (
     BulkUpdateRequest,
@@ -27,6 +27,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 def search_products(
     q: str | None = None,
     category_id: int | None = None,
+    brand: str | None = None,          # 👈 NUEVO
     condition: str | None = None,
     page: int = 1,
     limit: int = 12,
@@ -34,9 +35,13 @@ def search_products(
 ):
     query = (
         db.query(Product)
-        .options(joinedload(Product.category))
+        .options(
+            joinedload(Product.category),
+            joinedload(Product.brand),   # 👈 importante para evitar N+1
+        )
     )
 
+    # 🔎 TEXTO
     if q:
         query = query.filter(
             or_(
@@ -45,6 +50,7 @@ def search_products(
             )
         )
 
+    # 📂 CATEGORÍA (padre + hijos)
     if category_id:
         child_ids = (
             db.query(Category.id)
@@ -56,6 +62,15 @@ def search_products(
         )
         query = query.filter(Product.category_id.in_(child_ids))
 
+    # 🏷️ MARCA (FIX REAL)
+    if brand:
+        query = (
+            query
+            .join(Product.brand)
+            .filter(Brand.name.ilike(f"%{brand}%"))
+        )
+
+    # ⚙️ ESTADO
     if condition:
         query = query.filter(Product.condition == condition)
 

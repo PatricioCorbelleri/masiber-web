@@ -34,21 +34,25 @@ export const busqueda = {
     marginBottom: "8px",
   },
 
-  filterBtn: {
-    display: "block",
+  select: {
     width: "100%",
     padding: "8px 12px",
     borderRadius: "8px",
     border: "1px solid #ddd",
-    background: "white",
-    marginBottom: "6px",
-    cursor: "pointer",
+    fontFamily: "Inter",
+    marginBottom: "8px",
   },
 
-  filterBtnActive: {
-    background: colors.verdePetroleo,
-    color: "white",
-    borderColor: colors.verdePetroleo,
+  btnClear: {
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    border: "none",
+    background: "#eee",
+    cursor: "pointer",
+    fontFamily: "Inter",
+    fontWeight: 600,
+    marginBottom: "12px",
   },
 
   tagChip: {
@@ -74,10 +78,6 @@ export const busqueda = {
     marginBottom: "20px",
   },
 
-  empty: {
-    fontFamily: "Inter",
-  },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
@@ -93,77 +93,16 @@ export const busqueda = {
     color: "#223",
   },
 
-  img: {
-    width: "100%",
-    height: "160px",
-    objectFit: "cover",
-    borderRadius: "10px",
-    marginBottom: "10px",
-  },
-
-  cardTitle: {
-    fontFamily: "Montserrat",
-    fontWeight: 800,
-    fontSize: "15px",
-  },
-
-  cardCat: {
-    fontFamily: "Inter",
-    fontSize: "13px",
-    color: "#667",
-  },
-
-  cardPrice: {
-    fontFamily: "Montserrat",
-    fontWeight: 900,
-    marginTop: "8px",
-  },
-
-  pagination: {
-    marginTop: "30px",
-    display: "flex",
-    gap: "10px",
-  },
-
-  pageBtn: {
+  btnExport: {
+    flex: 1,
     padding: "8px 12px",
     borderRadius: "8px",
-    border: "1px solid #ddd",
-    background: "white",
-    cursor: "pointer",
-  },
-
-  pageBtnActive: {
+    border: "none",
     background: colors.verdePetroleo,
     color: "white",
-    borderColor: colors.verdePetroleo,
+    cursor: "pointer",
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: "13px",
   },
-
-  filterBtn: {
-  display: "block",
-  width: "100%",
-  padding: "8px 12px",
-  borderRadius: "8px",
-  border: "1px solid #ddd",
-  background: "white",
-  marginBottom: "6px",
-  cursor: "pointer",
-  textAlign: "left",   // 👈 IMPORTANTE
-},
-
-btnExport: {
-  flex: 1,
-  padding: "8px 12px",
-  borderRadius: "8px",
-  border: "none",
-  background: colors.verdePetroleo,
-  color: "white",
-  cursor: "pointer",
-  fontFamily: "Inter",
-  fontWeight: 600,
-  fontSize: "13px",
-},
-
-
-
 };
